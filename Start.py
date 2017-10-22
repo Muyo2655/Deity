@@ -1,5 +1,6 @@
 import sys
 import os
+import random
 from com.lloyd.base.Actors import Player
 from com.lloyd.base.Actors import Mob
 '''
@@ -99,7 +100,7 @@ def start2():
     start1()
 
 def startBattle():
-    mob = Mob("Goblin", 40, 10, 6, 0, 10)
+    mob = randomMob()
     print("A wild %s approaches!" % mob.name)
     combat = True
     while combat:
@@ -109,7 +110,8 @@ def startBattle():
         if option == 1:
             playerIG.attackTarget(mob)
         
-        mob.aiScript(playerIG)
+        if mob.health != 0:
+            mob.aiScript(playerIG)
         
         if playerIG.health == 0:
             print("You lose!")
@@ -118,8 +120,17 @@ def startBattle():
             victory(mob)
             combat = False
             
-        
-     
+def randomMob():
+    rng = random.randint(1,1000)        
+    if rng < 200:
+        return Mob("Imp", 25, 30, 6, 0, 6) 
+    elif rng < 500:
+        return Mob("Goblin", 40, 10, 8, 2, 10)
+    elif rng < 700:
+        return Mob("Bite Bug", 20, 20, 6, 2, 4)
+    else:
+        return Mob("Cockblocker", 60, 50, 12, 4, 500)
+    
 def victory(mob):
     print("You have defeated %s!" % mob.name)
     print("You gain %i gold!" % mob.gold)
@@ -130,8 +141,8 @@ def battleOption():
     print("[1] Attack")
 
 def showVitals(mob):
-    print("%s HP: %i / % i  %s MP:  %i / %i" % (playerIG.name, playerIG.health, playerIG.maxHealth, playerIG.name, playerIG.mana, playerIG.maxMana))
-    print("%s HP: %i / % i  %s MP:  %i / %i" % (mob.name, mob.health, mob.maxHealth, mob.name, mob.mana, mob.maxMana))
+    print("%s HP: %i / % i  MP:  %i / %i" % (playerIG.name, playerIG.health, playerIG.maxHealth, playerIG.mana, playerIG.maxMana))
+    print("%s HP: %i / % i  MP:  %i / %i" % (mob.name, mob.health, mob.maxHealth, mob.mana, mob.maxMana))
 
 def getIntInput():
     return int(input("-> "))

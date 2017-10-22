@@ -13,7 +13,7 @@ class Actor(object):
         self.health = health
         self.maxHealth = 100
         self.mana = mana
-        self.maxMana = 100
+        self.maxMana = 50
         self.attack = attack
         self.defense = defense
         self.gold = gold
@@ -28,6 +28,7 @@ class Actor(object):
         if self.health > self.maxHealth:
             self.health = self.maxHealth
         elif self.health < 0:
+            self.health = 0
             self.death()
     
     def death(self):
