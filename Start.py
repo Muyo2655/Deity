@@ -1,71 +1,68 @@
-import sys
-import os
 import random
+import com.lloyd.base.Utils as util
+import com.lloyd.base.Text as txt
 from com.lloyd.base.Actors import Player
 from com.lloyd.base.Actors import Mob
-'''
-class player(object):
-    
-    def __init__(self, name):
-        self.name = name
-        self.maxHealth = 100
-        self.health = 10
-        self.maxMana = 100
-        self.mana = self.maxMana
-        self.attack = 10
 
-    def checkHp(self, amount):
-        if self.health >= amount:
-            return True
-        return False
-
-    def restoreHp(self, amount):
-        self.health += amount
-        if self.health > self.maxHealth:
-            self.health = self.maxHealth
-
-'''
+jobSelect = {
+    1:"warrior",
+    2:"cleric",
+    3:"wizard"
+}
 
 def load():
     pass
 
-
 def main():
-    clearScreen()
+    util.clearScreen()
     print("DEITY 0.1\n")
-    print("[1] Start")
-    print("[2] Load")
-    print("[3] Exit")
-    option = int(input("-> "))
+    for i in range(0, 3):
+        print(txt.options[i] + txt.newMenu[i])
+        
+    option = util.getIntInput()
+    
     if option == 1:
         start()
     elif option == 2:
         pass
     elif option == 3:
-        exitGame()
+        util.exitGame()
     else:
         main()
 
 def start():
-    clearScreen()
-    print("Innkeeper: What is your name Traveller?")
-    name = input("-> ")
+    util.clearScreen()
+    
     global playerIG
-    playerIG = Player(name)
+    name = chooseName()
+    job = chooseJob()
+    playerIG = Player(name, job, 50)
     start1()
+
+# probably needs a regex validation to keep it alpha-limited
+def chooseName():
+    print(txt.newGame[4])
+    return input("-> ")
+
+# also needs validation so that they select 1 through 3
+def chooseJob():
+    print(txt.newGame[5])
+    for i in range(6, 9):
+        print(txt.options[i-6] + txt.newGame[i])
+    return jobSelect[util.getIntInput()]
     
 def start1():
-    clearScreen()
+    util.clearScreen()
     print("Innkeeper: %s huh?" % playerIG.name)
-    print("Innkeeper: I'm sure I've heard that name before.")
+    print(txt.newGame[9])
     leaveConvo = False
     while not leaveConvo:
-        print("[1] Reply: I don't really know what to do next, can you help me? (Tutorial)")
-        print("[2] Reply: Any news?")
-        print("[3] Reply: Shut up and point me in the direction of the nearest foe that needs slaying.")
-        print("[4] Leave Conversation")
-        start1option = getIntInput()
-        clearScreen()
+        convoSize = 4
+        for x in range (0, convoSize):
+            print(txt.options[x] + txt.newGame[x])
+            
+        start1option = util.getIntInput()
+        util.clearScreen()
         if start1option == 1:
             print("Hey this is the tutorial bit etc etc")
         if start1option == 2:
@@ -79,57 +76,65 @@ def start1():
     start2()
 
 def start2():
-    print("You are standing inside a bustling pub.  The innkeeper is eyeing you, and you don't know \nif it's true that he knows you or is simply weary of your presence.")
+    print(txt.newGame[10])
     leaveConvo = False
+    drinkCost = 5
     while not leaveConvo:
-        clearScreen()
+        util.clearScreen()
         print("Would you like a drink, %s?" % playerIG.name)
-        print("[1] Reply: Yes")
-        print("[2] Reply: No")
-        start2option = getIntInput()
-        clearScreen()
+        print("It'll cost you " + str(drinkCost) + " gold.")
+        txt.yesNo()
+        start2option = util.getIntInput()
+        util.clearScreen()
         if start2option == 1:
-            print("Have this.  It will make you feel better.")
-            playerIG.adjustHp(50)
-            print("%s HP is now %s / %s!" % (playerIG.name, playerIG.health, playerIG.maxHealth))
+            buyDrink(drinkCost)
             if playerIG.checkHp(playerIG.maxHealth):
                 leaveConvo = True
         elif start2option == 2:
-            print("Are you sure?  You look a bit weak.")
+            print(txt.newGame[11])
+            leaveConvo = True
     
     start1()
 
+def buyDrink(cost):
+    canBuy = playerIG.checkGold(cost)
+    
+    if canBuy:
+        print(txt.newGame[12])
+        playerIG.adjustHp(50)
+        playerIG.adjustGold(util.negate(5))
+        print("%s HP is now %i / %i!" % (playerIG.name, playerIG.health, playerIG.maxHealth))
+    else:
+        print(txt.generic[2])
+
 def startBattle():
     mob = randomMob()
-    print("A wild %s approaches!" % mob.name)
     combat = True
     while combat:
         showVitals(mob)
         battleOption()
-        option = getIntInput()
+        option = util.getIntInput()
         if option == 1:
             playerIG.attackTarget(mob)
+        elif option == 2:
+            playerIG.scanTarget(mob)
         
         if mob.health != 0:
             mob.aiScript(playerIG)
-        
+            
         if playerIG.health == 0:
-            print("You lose!")
-            exitGame()
+            loseBattle()
+            combat = False
         elif mob.health == 0:
             victory(mob)
             combat = False
             
 def randomMob():
-    rng = random.randint(1,1000)        
-    if rng < 200:
-        return Mob("Imp", 25, 30, 6, 0, 6) 
-    elif rng < 500:
-        return Mob("Goblin", 40, 10, 8, 2, 10)
-    elif rng < 700:
-        return Mob("Bite Bug", 20, 20, 6, 2, 4)
-    else:
-        return Mob("Cockblocker", 60, 50, 12, 4, 500)
+    return Mob("Drunk Brawler", random.uniform(0.5, 0.8), random.randint(4,8))
+ 
+def loseBattle():   
+    print(txt.battle[2])
+    playerIG.adjustGold(util.negate(playerIG.gold / 2))
     
 def victory(mob):
     print("You have defeated %s!" % mob.name)
@@ -138,19 +143,11 @@ def victory(mob):
       
 def battleOption():
     print("%s\'s turn" % playerIG.name)
-    print("[1] Attack")
+    for i in range(0, 2):
+        print(txt.options[i] + txt.battle[i])
 
 def showVitals(mob):
     print("%s HP: %i / % i  MP:  %i / %i" % (playerIG.name, playerIG.health, playerIG.maxHealth, playerIG.mana, playerIG.maxMana))
     print("%s HP: %i / % i  MP:  %i / %i" % (mob.name, mob.health, mob.maxHealth, mob.mana, mob.maxMana))
-
-def getIntInput():
-    return int(input("-> "))
-
-def clearScreen():
-    os.system("cls")
-    
-def exitGame():
-    sys.exit()
 
 main()
